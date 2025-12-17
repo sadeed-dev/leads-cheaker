@@ -46,7 +46,7 @@ function getRandomPastDate() {
 // -----------------------------------------------
 export const searchNumber = async (req, res) => {
   try {
-    const { mobile } = req.query;
+    const { mobile } = req. query;
 
     if (!mobile) {
       return res.status(400).json({
@@ -65,8 +65,9 @@ export const searchNumber = async (req, res) => {
       "contact"
     ];
 
-    // MySQL tables
+    // MySQL tables - prioritize `director_profiles` first so we stop searching other tables when found
     const tables = [
+      "director_profiles",
       "tax_enquiries",
       "social_enquiries",
       "mailmodo",
@@ -152,6 +153,8 @@ export const searchNumber = async (req, res) => {
 
         if (rows.length > 0) {
           finalRecord = mapSqlToUnified(rows[0]);
+          // tag which table produced the result (helpful for UI/debugging)
+          finalRecord.source_table = table;
         }
 
       } catch (err) {
@@ -270,8 +273,6 @@ let name =
 if (!name && company_name && company_name.split(" ").length <= 2) {
   name = company_name;
 }
-
-
           // -----------------------------
           // FINAL MAPPED OBJECT
           // -----------------------------
@@ -285,6 +286,8 @@ if (!name && company_name && company_name.split(" ").length <= 2) {
             endpoint: pickRandom(ENDPOINTS),
             created_at: getRandomPastDate()
           };
+          // mark source as mongo dispositions
+          finalRecord.source_table = 'tata_dispositions';
         }
 
       } catch (err) {

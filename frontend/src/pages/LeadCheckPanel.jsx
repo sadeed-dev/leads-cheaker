@@ -273,12 +273,12 @@ export default function LeadCheckPanel() {
       return;
     }
 
-    setLoading(true);
-    setHasSearched(true);
-
+    setLoading(true)
+    setHasSearched(true)
+ const base_url = import.meta.env.VITE_API_URL 
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/dnd/lead/search?mobile=${mobile}`
+        `${base_url}/api/dnd/lead/search?mobile=${mobile}`
       );
 
       const result = res.data.record;
@@ -293,6 +293,7 @@ export default function LeadCheckPanel() {
         toast.success("Data loaded successfully!");
       }
     } catch (err) {
+      console.log(err)
       toast.error("Error searching number. Try again.");
       setRecord(null);
     }
