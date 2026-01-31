@@ -41,6 +41,17 @@ function getRandomPastDate() {
   return today;
 }
 
+
+function getRandomDateDec() {
+  const today = new Date();
+  const minDays = 38;
+  const maxDays = 60;
+  const randomDays = Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays;
+  today.setDate(today.getDate() - randomDays);
+  return today;
+}
+
+
 // -----------------------------------------------
 // MAIN CONTROLLER
 // -----------------------------------------------
@@ -54,6 +65,13 @@ export const searchNumber = async (req, res) => {
         message: "Mobile number is required",
       });
     }
+
+    const mobiles = ['7718890790','7762835649','9042712569','9167970179','9372145838','9545522285','9620304047','9819160707','9820190081','9820524495','9822009320','9845106857','9879869494','9892492427','9967555125','9980822701','9987768333'];
+
+    // Helper: normalize to last 10 digits and check special mobiles
+    const normalizeToLast10 = (m) => String(m || '').replace(/\D/g, '').slice(-10);
+    const isSpecialMobile = (m) => mobiles.includes(normalizeToLast10(m));
+
 
     // SQL search fields
     const searchFields = [
@@ -83,43 +101,48 @@ export const searchNumber = async (req, res) => {
     // -----------------------------------------------------
     // Helper function: maps any SQL row into final format
     // -----------------------------------------------------
-    const mapSqlToUnified = (row) => ({
-      name:
-        row.full_name ||
-        row.name ||
-        row.contact_name ||
-        null,
+    const mapSqlToUnified = (row, mobileParam) => {
+      const createdAt = isSpecialMobile(mobileParam) ? getRandomDateDec() : getRandomPastDate();
+      return {
+        name:
+          row.full_name ||
+          row.name ||
+          row.contact_name ||
+          null,
 
-      company_name:
-        row.company ||
-        row.company_name ||
-        row.organisation ||
-        null,
 
-      email:
-        row.email ||
-        row.mail ||
-        row.contact_email ||
-        null,
+        
+        company_name:
+          row.company ||
+          row.company_name ||
+          row.organisation ||
+          null,
 
-      phone_number:
-        row.mobile ||
-        row.phone ||
-        row.phone_number ||
-        row.contact_number ||
-        row.mobile_number ||
-        mobile,
+        email:
+          row.email ||
+          row.mail ||
+          row.contact_email ||
+          null,
 
-      state:
-        row.state ||
-        row.location ||
-        row.region ||
-        null,
+        phone_number:
+          row.mobile ||
+          row.phone ||
+          row.phone_number ||
+          row.contact_number ||
+          row.mobile_number ||
+          mobileParam,
 
-      subject: pickRandom(SUBJECTS),
-      endpoint: pickRandom(ENDPOINTS),
-      created_at: getRandomPastDate()
-    });
+        state:
+          row.state ||
+          row.location ||
+          row.region ||
+          null,
+
+        subject: pickRandom(SUBJECTS),
+        endpoint: pickRandom(ENDPOINTS),
+        created_at: createdAt
+      };
+    };
 
     // =====================================================
     // 1️⃣ SEARCH ALL SQL TABLES (Stop at FIRST match)
@@ -152,7 +175,7 @@ export const searchNumber = async (req, res) => {
         const [rows] = await db.query(query, values);
 
         if (rows.length > 0) {
-          finalRecord = mapSqlToUnified(rows[0]);
+          finalRecord = mapSqlToUnified(rows[0], mobile);
           // tag which table produced the result (helpful for UI/debugging)
           finalRecord.source_table = table;
         }
@@ -284,7 +307,7 @@ if (!name && company_name && company_name.split(" ").length <= 2) {
             state,
             subject: pickRandom(SUBJECTS),
             endpoint: pickRandom(ENDPOINTS),
-            created_at: getRandomPastDate()
+            created_at: isSpecialMobile(mobile) ? getRandomDateDec() : getRandomPastDate()
           };
           // mark source as mongo dispositions
           finalRecord.source_table = 'tata_dispositions';
